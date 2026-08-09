@@ -896,34 +896,53 @@ def generate(
     model,
     prompt,
     max_tokens=400,
-    temperature=0.9
+    temperature=0.6,
+    min_tokens=20,
 ):
 
     end_id = tokenizer.tokenizer.token_to_id(
         "<|end|>"
     )
 
+
     if end_id is None:
+
         raise ValueError(
             "<|end|> missing from tokenizer"
         )
 
+
     model.eval()
+
 
     ids = tokenizer.encode(
         prompt
     )
 
+
     x = torch.tensor(
         ids,
         dtype=torch.long
-    ).unsqueeze(0).to(device)
+    ).unsqueeze(0).to(
+        device
+    )
 
 
-    prompt_length = x.shape[1]
+    # Protect context length
+    if x.shape[1] > CONFIG["context"]:
+
+        x = x[:, -CONFIG["context"]:]
 
 
-    for _ in range(max_tokens):
+    generated_ids = []
+
+
+    for _ in range(
+        max_tokens
+    ):
+
+
+        # Keep latest context window
 
         if x.shape[1] >= CONFIG["context"]:
 
@@ -932,23 +951,19 @@ def generate(
 
         with torch.no_grad():
 
-            logits = model(x)
+            logits = model(
+                x
+            )
 
+
+        # Only predict next token
 
         logits = logits[:, -1, :]
 
 
-        # Repetition penalty
-        for token_id in set(
-            x[0].tolist()
-        ):
+        # Temperature sampling
 
-            logits[0, token_id] *= 0.9
-
-
-        # Temperature
-
-        logits /= temperature
+        logits = logits / temperature
 
 
         probs = torch.softmax(
@@ -957,15 +972,38 @@ def generate(
         )
 
 
+        # Prevent ending too early
+
+        if len(generated_ids) < min_tokens:
+
+            probs[0, end_id] = 0
+
+            probs = probs / probs.sum()
+
+
+
         next_token = torch.multinomial(
             probs,
             1
         )
 
 
-        if next_token.item() == end_id:
+        token = next_token.item()
+
+
+
+        # Stop generation
+
+        if token == end_id:
 
             break
+
+
+
+        generated_ids.append(
+            token
+        )
+
 
 
         x = torch.cat(
@@ -977,14 +1015,13 @@ def generate(
         )
 
 
-    generated_ids = x[0].tolist()[
-        prompt_length:
-    ]
 
-
-    return tokenizer.decode(
+    output = tokenizer.decode(
         generated_ids
     )
+
+
+    return output
 
 
 
