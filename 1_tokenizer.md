@@ -206,4 +206,26 @@ def load_or_create_tokenizer(text):
 ```
 
 **Lets start with the function train():**
-This function is where the tokenizer is created
+
+This function creates a vocabulary from your dataset.
+
+Example:
+
+Your dataset:
+```
+The cat sat on the mat.
+The cat likes milk.
+```
+The tokenizer learns:
+```
+Vocabulary:
+
+0   The
+1   cat
+2   sat
+3   on
+4   the
+5   mat
+...
+```
+
