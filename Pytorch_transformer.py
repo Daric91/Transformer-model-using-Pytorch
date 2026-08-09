@@ -115,7 +115,7 @@ class BPETokenizer:
         )
 
 
-        # Byte-level BPE preprocessing
+        # Byte-level BPE preprocessing23
         self.tokenizer.pre_tokenizer = ByteLevel(
             add_prefix_space=True
         )
@@ -896,7 +896,7 @@ def generate(
     model,
     prompt,
     max_tokens=400,
-    temperature=0.8
+    temperature=0.9
 ):
 
     end_id = tokenizer.tokenizer.token_to_id(
@@ -908,14 +908,11 @@ def generate(
             "<|end|> missing from tokenizer"
         )
 
-
     model.eval()
-
 
     ids = tokenizer.encode(
         prompt
     )
-
 
     x = torch.tensor(
         ids,
@@ -923,10 +920,13 @@ def generate(
     ).unsqueeze(0).to(device)
 
 
+    prompt_length = x.shape[1]
+
 
     for _ in range(max_tokens):
 
         if x.shape[1] >= CONFIG["context"]:
+
             x = x[:, -CONFIG["context"]:]
 
 
@@ -936,6 +936,17 @@ def generate(
 
 
         logits = logits[:, -1, :]
+
+
+        # Repetition penalty
+        for token_id in set(
+            x[0].tolist()
+        ):
+
+            logits[0, token_id] *= 0.9
+
+
+        # Temperature
 
         logits /= temperature
 
@@ -953,6 +964,7 @@ def generate(
 
 
         if next_token.item() == end_id:
+
             break
 
 
@@ -965,13 +977,14 @@ def generate(
         )
 
 
-    generated_ids = x[0].tolist()[len(ids):]
+    generated_ids = x[0].tolist()[
+        prompt_length:
+    ]
 
 
     return tokenizer.decode(
         generated_ids
     )
-
 
 
 
