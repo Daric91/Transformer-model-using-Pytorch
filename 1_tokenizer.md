@@ -309,6 +309,22 @@ tokenizer
     v
 BPE model
 ```
+**What is unk tokem?**
+it stands for unknown token
+
+Example:
+
+Your vocabulary:
+```
+dog
+cat
+cow
+```
+input:
+```
+qwertyasdf
+```
+tokenizer cannot find, so it outputs `<|unk|>` instead of crashing
 **What is BPE?**
 
 BPE = Byte Pair Encoding.
@@ -339,8 +355,13 @@ Why?
 
 Because vocabulary is limited.
 
-Your config:
+the config:
 ```python
 "vocab_size":8000
 ```
 You cannot store every possible word. English has hundreds of thousands of words. So BPE creates reusable pieces.
+
+Next is byte level precessing:
+```python
+self.tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=True)
+```
