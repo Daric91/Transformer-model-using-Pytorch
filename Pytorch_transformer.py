@@ -896,8 +896,8 @@ def generate(
     model,
     prompt,
     max_tokens=400,
-    temperature=0.6,
-    min_tokens=20,
+    temperature=0.5,
+    min_tokens=30,
 ):
 
     end_id = tokenizer.tokenizer.token_to_id(
@@ -910,6 +910,26 @@ def generate(
         raise ValueError(
             "<|end|> missing from tokenizer"
         )
+
+
+    # Block conversation-control tokens
+    bad_tokens = [
+        "<|user|>",
+        "<|assistant|>",
+        "<|system|>"
+    ]
+
+
+    bad_ids = [
+        tokenizer.tokenizer.token_to_id(t)
+        for t in bad_tokens
+    ]
+
+
+    bad_ids = [
+        x for x in bad_ids
+        if x is not None
+    ]
 
 
     model.eval()
@@ -929,6 +949,7 @@ def generate(
 
 
     # Protect context length
+
     if x.shape[1] > CONFIG["context"]:
 
         x = x[:, -CONFIG["context"]:]
@@ -942,8 +963,6 @@ def generate(
     ):
 
 
-        # Keep latest context window
-
         if x.shape[1] >= CONFIG["context"]:
 
             x = x[:, -CONFIG["context"]:]
@@ -956,12 +975,10 @@ def generate(
             )
 
 
-        # Only predict next token
-
         logits = logits[:, -1, :]
 
 
-        # Temperature sampling
+        # Temperature
 
         logits = logits / temperature
 
@@ -972,13 +989,23 @@ def generate(
         )
 
 
-        # Prevent ending too early
+        # Prevent special tokens appearing in answers
+
+        for bid in bad_ids:
+
+            probs[0, bid] = 0
+
+
+        # Prevent early <|end|>
 
         if len(generated_ids) < min_tokens:
 
             probs[0, end_id] = 0
 
-            probs = probs / probs.sum()
+
+        # Renormalize after removing tokens
+
+        probs = probs / probs.sum()
 
 
 
@@ -992,7 +1019,7 @@ def generate(
 
 
 
-        # Stop generation
+        # Stop at end token
 
         if token == end_id:
 
@@ -1003,7 +1030,6 @@ def generate(
         generated_ids.append(
             token
         )
-
 
 
         x = torch.cat(
@@ -1022,7 +1048,6 @@ def generate(
 
 
     return output
-
 
 
 
@@ -1129,37 +1154,29 @@ def load_chat_model():
 
 def chat():
 
-
     model = load_chat_model()
 
-
     if model is None:
-
         return
 
 
-
+    print()
+    print("TinyGPT Chat")
+    print("Type exit to quit")
     print()
 
-    print(
-        "TinyGPT Chat"
+
+    history = (
+        "<|system|>\n"
+        "You are a helpful AI assistant.\n\n"
     )
-
-    print(
-        "Type exit to quit"
-    )
-
-    print()
-
 
 
     while True:
 
 
         user = input(
-
             "User: "
-
         )
 
 
@@ -1167,26 +1184,23 @@ def chat():
 
             break
 
-        prompt = (
-                "<|system|>\n"
-                "You are a helpful AI assistant.\n"
-                "<|user|>\n"
-                +
-                user
-                +
-                "\n<|assistant|>\n"
+
+
+        history += (
+            "<|user|>\n"
+            + user
+            + "\n\n"
+            "<|assistant|>\n"
         )
 
 
 
         response = generate(
-
             model,
-
-            prompt,
-
-            max_tokens=400
-
+            history,
+            max_tokens=200,
+            temperature=0.5,
+            min_tokens=30
         )
 
 
@@ -1194,14 +1208,30 @@ def chat():
         print()
 
         print(
-
             "AI:",
-
             response
-
         )
 
         print()
+
+
+
+        history += (
+            response
+            +
+            "\n<|end|>\n\n"
+        )
+
+
+
+        # reset context before exceeding 512 tokens
+
+        if len(history) > 1500:
+
+            history = (
+                "<|system|>\n"
+                "You are a helpful AI assistant.\n\n"
+            )
 
 
 
