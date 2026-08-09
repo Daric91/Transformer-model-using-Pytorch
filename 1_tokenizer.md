@@ -24,6 +24,30 @@ from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from tokenizers.trainers import BpeTrainer
 from tokenizers import AddedToken
 ```
+**Config of the entire model architecture**
+```python
+CONFIG = {
+
+    # model size
+    "dim": 510,
+    "layers": 10,
+    "heads": 10,
+
+    # context window
+    "context": 512,
+
+    "dropout": 0.1,
+
+    # training
+    "lr": 3e-4,
+    "batch": 2,
+    "gradient_accumulation": 16,
+    "steps": 88000,
+
+    # tokenizer
+    "vocab_size": 8000 
+}
+```
 **File and Special Tokens (for training use after)**
 ```python
 TOKENIZER_FILE = "tokenizer.json"
@@ -206,7 +230,52 @@ def load_or_create_tokenizer(text):
 ```
 
 **Lets start with the function train():**
+```python
+ def train(self, text):
 
+        print(
+            "Training HuggingFace BPE tokenizer..."
+        )
+
+
+        self.tokenizer = Tokenizer(
+            BPE(
+                unk_token="<|unk|>"
+            )
+        )
+
+
+        # Byte-level BPE preprocessing23
+        self.tokenizer.pre_tokenizer = ByteLevel(
+            add_prefix_space=True
+        )
+
+
+        # IMPORTANT:
+        # This fixes Ġ and Ċ decoding
+        self.tokenizer.decoder = ByteLevelDecoder()
+
+
+
+        special_tokens = [
+            AddedToken(
+                x,
+                special=True
+            )
+            for x in SPECIAL
+        ]
+
+
+
+        trainer = BpeTrainer(
+            vocab_size=CONFIG["vocab_size"],
+            special_tokens=special_tokens
+        )
+```
+```python
+def train(self, text):
+    print("Training HuggingFace BPE tokenizer...")
+```
 This function creates a vocabulary from your dataset.
 
 Example:
@@ -228,4 +297,50 @@ Vocabulary:
 5   mat
 ...
 ```
+Next, the BPE tokenizer will be created:
+```python
+self.tokenizer = Tokenizer(BPE(unk_token="<|unk|>"))
+```
+This creates:
+```
+tokenizer
+    |
+    |
+    v
+BPE model
+```
+**What is BPE?**
 
+BPE = Byte Pair Encoding.
+
+It learns common pieces of words.
+
+Instead of:
+```
+unbelievable
+```
+being one unknown word
+
+BPE may split:
+```
+un
+believe
+able
+```
+or:
+```
+un
+believ
+able
+```
+depending on training.
+
+Why?
+
+Because vocabulary is limited.
+
+Your config:
+```python
+"vocab_size":8000
+```
+You cannot store every possible word. English has hundreds of thousands of words. So BPE creates reusable pieces.
