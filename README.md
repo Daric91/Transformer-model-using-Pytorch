@@ -29,3 +29,13 @@ so it understands context better and doesn’t need recurrent or convolutional l
 
 **Training...**
 
+## 1. Tokenizer
+Tokenizer is a tool that converts string characters into token ID's, for example:
+a = 0
+b = 1
+c = 2
+d = 3
+(and so on...)
+
+`code`
+
