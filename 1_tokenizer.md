@@ -32,7 +32,7 @@ SPECIAL = [
     "<|user|>",
     "<|assistant|>",
     "<|system|>",
-    "<|end|>
+    "<|end|>,
 ]
 ```
 **Class BPE_tokenizer**
@@ -204,3 +204,6 @@ def load_or_create_tokenizer(text):
 
     return tokenizer
 ```
+
+**Lets start with the function train():**
+This function is where the tokenizer is created
