@@ -1,7 +1,7 @@
 # Transformer-model-using-Pytorch
 To make a transfomer language model using pytorch
 
-Dataset of training: https://huggingface.co/datasets/Digilidaahz/chat_dataset_2B_cha/
+Dataset for training: https://huggingface.co/datasets/Digilidaahz/chat_dataset_2B_cha/
 
 # What is a transformer?
 The Transformer is a model that uses self-attention to process all words in a sentence at the same time, 
@@ -21,6 +21,9 @@ so it understands context better and doesn’t need recurrent or convolutional l
 * Feed Forward Network
 * +Residual
 
+(repeated N times)
+* Final LayerNorm
+
 **Output**
 * Linear layer
 * Vocabulary size logits
@@ -32,10 +35,14 @@ so it understands context better and doesn’t need recurrent or convolutional l
 ## 1. Tokenizer
 Tokenizer is a tool that converts string characters into token ID's, for example:
 a = 0
-b = 1
-c = 2
-d = 3
-(and so on...)
 
-`code`
+b = 1
+
+c = 2
+
+d = 3
+
+e = ...
+
+But a proper tokenizer don't make every character in text as 1 token, rather they seperate a word and make them each 1 token, in average, 1 token equals to 4 characters.
 
