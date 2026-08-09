@@ -32,7 +32,8 @@ so it understands context better and doesn’t need recurrent or convolutional l
 
 **Training...**
 
-# The guide is formally starting in the file, 1_tokenizer.md
+## The guide is formally starting in the file: 
+`1_tokenizer.md`
 
 
 
