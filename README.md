@@ -2,3 +2,8 @@
 To make a transfomer language model using pytorch
 
 Dataset of training: https://huggingface.co/datasets/Digilidaahz/chat_dataset_2B_cha/
+
+# What is a transformer?
+The Transformer is a model that uses self-attention to process all words in a sentence at the same time, 
+so it understands context better and doesn’t need recurrent or convolutional layers.
+
