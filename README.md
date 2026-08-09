@@ -50,29 +50,28 @@ A proper tokenizer doesn't make every character a token. Instead, it uses subwor
 So how can we make a tokenizer using Python? There is a type of tokenizer called Byte-Level BPE tokenizer, and this is how we write in Python:
 
 **Python Library**
-`
+```python
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.pre_tokenizers import ByteLevel
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from tokenizers.trainers import BpeTrainer
 from tokenizers import AddedToken
-`
+```
 **File and Special Tokens (for training use after)**
-`
+```python
 TOKENIZER_FILE = "tokenizer.json"
-`
-`
+
 SPECIAL = [ 
     "<|user|>",
     "<|assistant|>",
     "<|system|>",
     "<|end|>
 ]
-`
+```
 **Class BPE_tokenizer**
-
-`class BPETokenizer:`
+```python
+class BPETokenizer:
 
 
     def __init__(self):
@@ -207,7 +206,38 @@ SPECIAL = [
             "Vocabulary:",
             self.tokenizer.get_vocab_size()
         )
-`
-`
+```
+**Create and Load tokenizer**
+```python
+def load_or_create_tokenizer(text):
+
+
+    if os.path.exists(
+        TOKENIZER_FILE
+    ):
+
+
+        tokenizer.load()
+
+
+    else:
+
+
+        print(
+            "Creating tokenizer..."
+        )
+
+
+        tokenizer.train(
+            text
+        )
+
+
+        tokenizer.save()
+
+
+    return tokenizer
+```
+
 
 
