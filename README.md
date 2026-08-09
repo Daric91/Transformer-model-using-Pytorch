@@ -12,6 +12,7 @@ so it understands context better and doesn’t need recurrent or convolutional l
 * Tokenizer
 * Embedding
 * Position Embedding
+
 **Transfomer block**
 * LayerNorm
 * Multihead attention
@@ -19,10 +20,12 @@ so it understands context better and doesn’t need recurrent or convolutional l
 * LayerNorm
 * Feed Forward Network
 * +Residual
+
 **Output**
 * Linear layer
 * Vocabulary size logits
 * Softmax
 * possibility every token
+
 **Training...**
 
