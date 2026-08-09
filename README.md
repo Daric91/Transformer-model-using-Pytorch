@@ -48,6 +48,8 @@ A proper tokenizer doesn't make every character a token. Instead, it uses subwor
 1 token equals about 4 characters.
 
 So how can we make a tokenizer using Python? There is a type of tokenizer called Byte-Level BPE tokenizer, and this is how we write in Python:
+
+**Python Library**
 `
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
@@ -55,26 +57,22 @@ from tokenizers.pre_tokenizers import ByteLevel
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from tokenizers.trainers import BpeTrainer
 from tokenizers import AddedToken
-
-SPECIAL = [
-
+`
+**File and Special Tokens (for training use after)**
+`
+TOKENIZER_FILE = "tokenizer.json"
+`
+`
+SPECIAL = [ 
     "<|user|>",
-
     "<|assistant|>",
-
     "<|system|>",
-
-    "<|end|>"
-
+    "<|end|>
 ]
+`
+**Class BPE_tokenizer**
 
-
-
-# ==========================================================
-# HUGGINGFACE BPE TOKENIZER
-# ==========================================================
-
-class BPETokenizer:
+`class BPETokenizer:`
 
 
     def __init__(self):
@@ -209,38 +207,7 @@ class BPETokenizer:
             "Vocabulary:",
             self.tokenizer.get_vocab_size()
         )
-tokenizer = BPETokenizer()
-
-
-
-def load_or_create_tokenizer(text):
-
-
-    if os.path.exists(
-        TOKENIZER_FILE
-    ):
-
-
-        tokenizer.load()
-
-
-    else:
-
-
-        print(
-            "Creating tokenizer..."
-        )
-
-
-        tokenizer.train(
-            text
-        )
-
-
-        tokenizer.save()
-
-
-    return tokenizer
+`
 `
 
 
