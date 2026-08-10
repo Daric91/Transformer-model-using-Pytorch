@@ -409,8 +409,44 @@ special_tokens = [
     for x in SPECIAL
 ]
 ```
+This tells the tokenizer, "treat the special tokens as complete token." 
 
+Without this:
 
+`<|user|>` might become something like after tokenizer
+```
+<
+|
+user
+|
+>
+```
+which is not we want
+
+With AddToken:
+
+`<|user|>`
+
+becomes 
+
+`token 7995`
+
+one unit.
+
+**BPE Trainer**
+```python
+trainer = BpeTrainer(
+    vocab_size=CONFIG["vocab_size"],
+    special_tokens=special_tokens
+)
+```
+this trains the vocabulary
+
+the vocab size = `8000`
+
+which means the tokenizer will create: `8000 token`
+
+**Lets go on to the function text_iterator**
 
 
 
