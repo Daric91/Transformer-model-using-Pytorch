@@ -637,29 +637,30 @@ def create_training_tokens(text):
 # ==========================================================
 
 def save_checkpoint(
-
     model,
-
+    optimizer,
     step,
-
     tokens_seen
-
 ):
 
-
     path = os.path.join(
-
         CHECKPOINT_DIR,
-
         "checkpoint_latest.pt"
-
     )
 
-    torch.save({
-        "model": model.state_dict(),
+
+    checkpoint = {
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
         "step": step,
         "tokens_seen": tokens_seen
-    }, path)
+    }
+
+
+    torch.save(
+        checkpoint,
+        path
+    )
 
 
     print(
@@ -672,7 +673,7 @@ def save_checkpoint(
 
 def load_checkpoint(model, optimizer):
 
-    path = "checkpoints/checkpoint_latest_15005_(1).pt"
+    path = "checkpoints/checkpoint_latest.pt"
 
     if not os.path.exists(path):
         return 0,0
@@ -876,13 +877,12 @@ def train(
                 total_loss / CONFIG["gradient_accumulation"]
             )
 
-
             save_checkpoint(
                 model,
+                optimizer,
                 step,
                 tokens_seen
             )
-
 
     print(
         "Training finished"
@@ -904,15 +904,12 @@ def generate(
         "<|end|>"
     )
 
-
     if end_id is None:
-
         raise ValueError(
             "<|end|> missing from tokenizer"
         )
 
 
-    # Block conversation-control tokens
     bad_tokens = [
         "<|user|>",
         "<|assistant|>",
@@ -943,83 +940,89 @@ def generate(
     x = torch.tensor(
         ids,
         dtype=torch.long
-    ).unsqueeze(0).to(
-        device
-    )
+    ).unsqueeze(0).to(device)
 
 
-    # Protect context length
 
     if x.shape[1] > CONFIG["context"]:
-
         x = x[:, -CONFIG["context"]:]
 
 
     generated_ids = []
 
 
-    for _ in range(
-        max_tokens
-    ):
+    for _ in range(max_tokens):
 
 
         if x.shape[1] >= CONFIG["context"]:
-
             x = x[:, -CONFIG["context"]:]
 
 
         with torch.no_grad():
 
-            logits = model(
-                x
-            )
+            logits = model(x)
 
 
         logits = logits[:, -1, :]
 
 
-        # Temperature
+        # repetition penalty
+        for token_id in set(x[0].tolist()):
 
+            logits[0, token_id] *= 0.7
+
+
+
+        # block special tokens
+        for bid in bad_ids:
+
+            logits[0, bid] = -float("inf")
+
+
+
+        # block end token early
+        if len(generated_ids) < min_tokens:
+
+            logits[0, end_id] = -float("inf")
+
+
+
+        # temperature
         logits = logits / temperature
 
 
-        probs = torch.softmax(
+
+        # top-k
+        top_k = 50
+
+        values, indices = torch.topk(
             logits,
+            top_k,
             dim=-1
         )
 
 
-        # Prevent special tokens appearing in answers
-
-        for bid in bad_ids:
-
-            probs[0, bid] = 0
-
-
-        # Prevent early <|end|>
-
-        if len(generated_ids) < min_tokens:
-
-            probs[0, end_id] = 0
+        probs = torch.softmax(
+            values,
+            dim=-1
+        )
 
 
-        # Renormalize after removing tokens
-
-        probs = probs / probs.sum()
-
-
-
-        next_token = torch.multinomial(
+        sample = torch.multinomial(
             probs,
             1
+        )
+
+
+        next_token = indices.gather(
+            -1,
+            sample
         )
 
 
         token = next_token.item()
 
 
-
-        # Stop at end token
 
         if token == end_id:
 
@@ -1042,12 +1045,9 @@ def generate(
 
 
 
-    output = tokenizer.decode(
+    return tokenizer.decode(
         generated_ids
     )
-
-
-    return output
 
 
 
