@@ -297,7 +297,7 @@ Vocabulary:
 5   mat
 ...
 ```
-Next, the BPE tokenizer will be created:
+**Next, the BPE tokenizer will be created:**
 ```python
 self.tokenizer = Tokenizer(BPE(unk_token="<|unk|>"))
 ```
@@ -361,7 +361,56 @@ the config:
 ```
 You cannot store every possible word. English has hundreds of thousands of words. So BPE creates reusable pieces.
 
-Next is byte level precessing:
+**Next is byte level precessing:**
 ```python
 self.tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=True)
 ```
+The byte level BPE is used by GPT-2 styled models.
+Normal BPE:
+```
+hello world
+```
+might become
+```
+hello
+world
+```
+Byte-level BPE keeps spaces:
+```
+hello
+Ġworld
+```
+`Ġ` means that there was a space before this token, so the model learns word boundaries.
+```python
+add_prefix_space=True
+```
+with this everything follows the same rule of adding special characters to represent a space.
+**Byte level decoder**
+```python
+self.tokenizer.decoder = ByteLevelDecoder()
+```
+this reverses the encoding
+
+For example:
+
+Encoding: `hello world` -> `hello Ġworld`
+
+Decoding: `hello Ġworld` -> `hello world`
+
+Without this you might get helloĠworld as a response in chat.
+
+**Added special token**
+```python
+special_tokens = [
+    AddedToken(
+        x,
+        special=True
+    )
+    for x in SPECIAL
+]
+```
+
+
+
+
+
