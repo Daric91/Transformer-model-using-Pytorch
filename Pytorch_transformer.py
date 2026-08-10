@@ -676,7 +676,9 @@ def load_checkpoint(model, optimizer):
     path = "checkpoints/checkpoint_latest.pt"
 
     if not os.path.exists(path):
-        return 0,0
+        raise FileNotFoundError(
+            f"Checkpoint not found: {path}"
+        )
 
     print("Loading checkpoint...")
 
@@ -1123,12 +1125,8 @@ def load_chat_model():
 
     )
 
-
-
     model.load_state_dict(
-
-        ck["model"]
-
+        ck["model_state_dict"]
     )
 
 
