@@ -448,5 +448,167 @@ which means the tokenizer will create: `8000 token`
 
 **Lets go on to the function text_iterator**
 
+```python
+def text_iterator():
 
+    chunk_size = 1000000
+
+    for i in range(
+        0,
+        len(text),
+        chunk_size
+    ):
+
+        yield text[
+            i:i+chunk_size
+        ]
+```
+This prevents loading huge datasets into memory.
+
+Imagine a dataset of 500 gb, you dont want to read the whole text at once, because it will cost memoryError, what you want is:
+```Example
+chunk1 : 10mb
+chunk2 : 10mb
+chunk3 : 10mb
+```
+It will read a small amount of text from a huge dataset every time
+
+**Train tokenizer**
+```python
+self.tokenizer.train_from_iterator(
+    text_iterator(),
+    trainer=trainer
+)
+```
+This is where BPE learns.
+
+It analyzes your whole datasetand finds frequent patterns.
+
+Example:
+
+Dataset:
+```
+playing
+playing
+playing
+```
+It learns playing because `ing` appears often.
+
+**Next function, token_to_id()**
+```python
+def token_to_id(self, token):
+    return self.tokenizer.token_to_id(token)
+```
+It converts tokens into numbers
+
+Example:
+```
+token_to_id("hello")
+
+> 523
+```
+**Function Encode()**
+```python
+    def encode(self, text):
+        return self.tokenizer.encode(
+            text,
+            add_special_tokens=False
+        ).ids
+```
+Example:
+
+Text: `hello world` -> Tokenizer `hello Ġworld` -> ID `[15496, 995]`
+
+The transformer model receives:
+```
+torch.tensor([15496,995])
+```
+
+**Function decode()**
+```python
+    def decode(self, ids):
+        return self.tokenizer.decode(
+            ids,
+            skip_special_tokens=False
+        )
+```
+Reverse operation.
+
+Example:
+
+Input: `[15496,995]`
+
+Output: `hello world`
+
+**Function get_vocab_size()**
+```python
+    def get_vocab_size(self):
+
+        return self.tokenizer.get_vocab_size()
+```
+
+It returns: `8000`
+
+used after in embedding:
+```python
+nn.Embedding(
+    vocab_size,
+    embedding_dimension # in config, it equals 510
+)
+```
+meaning
+```
+8000 possible tokens
+each has a 510 dimensional vector
+```
+**save() function**
+```python
+    def save(self):
+
+        self.tokenizer.save(
+            TOKENIZER_FILE
+        )
+
+        print(
+            "Tokenizer saved:",
+            TOKENIZER_FILE
+        )
+```
+saves `tokenizer.json`
+
+It contains:
+* vocabulary
+* merge rule
+* special tokens
+* configuration
+
+**Load function**
+```python
+        def load(self):
+
+        print("Loading tokenizer...")
+
+        self.tokenizer = Tokenizer.from_file(
+            TOKENIZER_FILE
+        )
+
+        self.tokenizer.decoder = ByteLevelDecoder()
+
+        for token in SPECIAL:
+
+            if self.tokenizer.token_to_id(token) is None:
+                print(
+                    "WARNING missing:",
+                    token
+                )
+
+        print(
+            "Vocabulary:",
+            self.tokenizer.get_vocab_size()
+        )
+```
+Loads existing tokenizer.
+
+Important:
+During training and chatting, you must use the same `tokenizer.json`, because when the token id for a token will be different if using different tokenizer, this makes the model useless.
 
